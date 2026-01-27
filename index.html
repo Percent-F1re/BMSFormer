@@ -1,1 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习笔记：BMSFormer</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;     /* 蓝色 */
+            --note-tag-color: #c0392b;   /* 【学习笔记】的深红色 */
+            --divider-color: #d35400;    /* 橙色装饰线 */
+            --bg-color: #ffffff;
+            --text-color: #333;
+            --sidebar-width: 280px;
+            --content-max-width: 1250px;
+            --hover-border-color: #1e5f99; /* 新增：悬浮时的深蓝色 */
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.8;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- 左侧导航栏样式 --- */
+        nav.sidebar {
+            width: var(--sidebar-width);
+            background-color: #f9f9f9;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            border-right: 1px solid #ddd;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        nav.sidebar h3 {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+
+        nav.sidebar ul { list-style: none; }
+        nav.sidebar li { margin-bottom: 8px; }
+        nav.sidebar a {
+            text-decoration: none;
+            color: #555;
+            display: block;
+            padding: 6px 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        nav.sidebar a:hover {
+            background-color: #eaf6ff;
+            color: var(--accent-color);
+        }
+        nav.sidebar .sub-menu {
+            margin-left: 15px;
+            font-size: 0.85rem;
+            border-left: 2px solid #eee;
+        }
+
+        /* --- 右侧主要内容样式 --- */
+        main.content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .content-block {
+            width: 100%;
+            max-width: var(--content-max-width);
+        }
+
+        /* 正文段落样式 */
+        .content-block p {
+            font-size: 1.15rem;
+            text-align: justify;
+            margin-bottom: 1.5em;
+            line-height: 1.9;
+            color: #444;
+        }
+
+        /* --- 头部设计 --- */
+        header.article-header {
+            text-align: center;
+            margin-bottom: 40px;
+            width: 100%;
+        }
+
+        h1.main-title {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+            color: #000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .note-tag {
+            color: var(--note-tag-color);
+            margin-right: 10px;
+        }
+
+        .title-divider {
+            width: 200px;
+            height: 5px;
+            background-color: var(--divider-color);
+            margin: 0 auto 30px auto;
+            border-radius: 2px;
+        }
+
+        .header-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .header-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #555;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .header-btn:hover {
+            background-color: #f8f9fa;
+            border-color: #bbb;
+            color: #000;
+        }
+
+        .header-btn svg {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            fill: #666;
+        }
+
+        .paper-info-box {
+            background-color: #f8f9fa;
+            border-left: 6px solid #1e5f99;
+            padding: 25px 30px;
+            text-align: left;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 40px;
+            color: #444;
+            font-size: 1rem;
+            line-height: 1.8;
+            width: 100%;
+        }
+
+        .paper-info-box strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        /* --- 章节样式 --- */
+        section {
+            background: white;
+            margin-bottom: 40px;
+            width: 100%;
+            scroll-margin-top: 20px;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            font-size: 1.6rem;
+        }
+
+        h3 {
+            color: #333;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        h3::before {
+            content: '';
+            display: inline-block;
+            width: 5px;
+            height: 22px;
+            background-color: var(--accent-color);
+            margin-right: 12px;
+            border-radius: 2px;
+        }
+
+        /* --- 图片容器与说明文字 --- */
+        .img-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 35px 0; /* 增加上下间距 */
+        }
+
+        /* --- 修改点：图片美化与交互样式 --- */
+        .content-img {
+            /* 1. 尺寸调整：限制最大宽度为 80% 或 800px，高度自动，保证比例 */
+            width: auto;
+            max-width: 90%;
+            max-height: 800px; /* 防止过高 */
+            height: auto;
+
+            display: block;
+            border-radius: 6px;
+
+            /* 2. 初始边框：设置透明边框占位，防止hover时抖动 */
+            border: 2px solid transparent;
+
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 稍微柔和一点的初始阴影 */
+
+            /* 动画过渡：包含边框颜色、阴影和位移 */
+            transition: all 0.3s ease;
+            cursor: zoom-in;
+        }
+
+        /* ★★★ 新增：专门用于缩小图2和图5的样式类 ★★★ */
+        .content-img.small-size {
+            max-width: 60%; /* 在电脑上显示更小 (原为80%) */
+        }
+
+        /* 鼠标悬停状态 */
+        .content-img:hover {
+            /* 浮动效果 */
+            transform: translateY(-6px);
+
+            /* 加深阴影 */
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+
+            /* 3. 修改点：边缘变为深蓝色 */
+            border-color: var(--hover-border-color);
+        }
+
+        .caption {
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: #777;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        /* --- 灯箱 (Lightbox) 样式 --- */
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .lightbox-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            animation: zoomIn 0.3s;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            z-index: 10001;
+        }
+
+        .lightbox-close:hover,
+        .lightbox-close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        @keyframes zoomIn {
+            from {transform:scale(0.8); opacity: 0;}
+            to {transform:scale(1); opacity: 1;}
+        }
+
+        /* 响应式 */
+        @media (max-width: 1400px) {
+            h1.main-title { font-size: 1.8rem; }
+        }
+        @media (max-width: 1200px) {
+            h1.main-title { white-space: normal; }
+        }
+        @media (max-width: 768px) {
+            nav.sidebar { display: none; }
+            main.content { margin-left: 0; padding: 20px; }
+            .header-buttons { flex-direction: column; align-items: center; }
+            .paper-info-box { padding: 15px; }
+            .lightbox-close { top: 15px; right: 20px; font-size: 30px; }
+
+            /* 移动端图片调整：即使是小尺寸图片，在手机上也尽量占宽一点，方便看清 */
+            .content-img { max-width: 95%; }
+            .content-img.small-size { max-width: 90%; }
+        }
+
+      /* --- 页脚样式 (最终修正版) --- */
+        .bms-footer {
+            width: 100%;
+            text-align: center;
+            background-color: #fff;
+            border-top: 1px solid #e0e0e0;
+            margin-top: 60px;
+            padding-top: 60px;
+            padding-bottom: 60px;
+        }
+
+        .footer-logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+            display: inline-block;
+        }
+
+        .footer-desc p {
+            font-size: 1.1rem;
+            color: #666;
+            margin: 8px 0;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+        .footer-copyright {
+            margin-top: 45px;
+            font-size: 0.95rem;
+            color: #bbb;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 左侧导航栏 -->
+    <nav class="sidebar">
+        <h3>导航栏</h3>
+        <ul>
+            <li><a href="#intro">一、BMS的难题</a></li>
+            <li><a href="#innovation">二、BMSFormer的创新</a>
+                <ul class="sub-menu">
+                    <li><a href="#inn-1">1. 切除冗余数据</a></li>
+                    <li><a href="#inn-2">2. 局部—全局融合注意力</a></li>
+                    <li><a href="#inn-3">3. 多尺度深度可分离卷积</a></li>
+                </ul>
+            </li>
+            <li><a href="#dataset">三、数据集实测</a>
+                <ul class="sub-menu">
+                    <li><a href="#dat-1">1. 精度和泛化能力</a></li>
+                    <li><a href="#dat-2">2. 计算效率和资源占用</a></li>
+                    <li><a href="#dat-3">3. 鲁棒性</a></li>
+                </ul>
+            </li>
+            <li><a href="#summary">四、总结</a></li>
+            <li><a href="#reference">原始文献</a></li>
+        </ul>
+    </nav>
+
+    <!-- 右侧主要内容 -->
+    <main class="content">
+
+        <!-- 头部区域 -->
+        <header class="article-header content-block">
+            <h1 class="main-title">
+                <span class="note-tag">【学习笔记】</span>BMSFormer：面向资源受限BMS的高效锂电池SOH在线估算模型
+            </h1>
+            <div class="title-divider"></div>
+            <div class="header-buttons">
+                <a href="https://www.sciencedirect.com/science/article/pii/S0360544224038088?via%3Dihub" target="_blank" class="header-btn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path>
+                    </svg>
+                    原文链接 (ScienceDirect)
+                </a>
+            </div>
+            <div class="paper-info-box">
+                <p><strong>论文题目：</strong> BMSFormer: An efficient deep learning model for online state-of-health estimation of lithium-ion batteries under high-frequency early SOC data with strong correlated single health indicator</p>
+                <p><strong>来源期刊：</strong> Energy ，2024</p>
+                <p><strong>关键词：</strong> 健康状态；锂离子电池；效率估计；局部—全局融合注意力；深度特征融合</p>
+            </div>
+        </header>
+
+        <!-- 第一章 -->
+        <section id="intro" class="content-block">
+            <h2>一、BMS的难题</h2>
+            <p>
+               锂离子电池的安全与寿命管理是当今时代的一个热点，其健康状态（SOH）估算是电池管理系统（BMS）的核心功能之一。在实际的BMS开发中，工程师们面临着三个难题：<br>
+                <strong>（1）算力与存储限制</strong><br>
+               嵌入式BMS芯片的存储空间和算力有限，而Transformer等模型参数量大，芯片无法承载。<br>
+                <strong>（2）实时性和稳定性不足</strong><br>
+               许多模型结构复杂，推理时间长，且对超参数设置敏感，难以满足实时估算和稳定性要求。<br>
+                <strong>（3）精度不足 </strong><br>
+               一些模型提取的健康指标表征能力不足或提取了弱相关性的健康指标，导致结果精度不足。
+            </p>
+            <p>
+              针对以上问题，该论文提出了<strong>BMSFormer（Battery Management System Transformer）</strong>轻量级模型。BMSFormer拥有着Transformer模型的特征提取能力，在保证高精度的前提下，有效降低了计算复杂度和存储需求，适用于资源受限的BMS环境。
+            </p>
+        </section>
+
+        <!-- 第二章 -->
+        <section id="innovation" class="content-block">
+            <h2>二、BMSFormer的创新</h2>
+            <p>
+                BMSFormer不是简单的Transformer应用，而是一个针对电池时间序列数据特性经过深度重构的轻量化高效模型。
+            </p>
+
+            <div class="img-wrapper">
+                <img src="1.jpg" alt="BMSFormer 模型整体架构" class="content-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                <span class="caption">图1 BMSFormer 模型整体架构</span>
+            </div>
+
+            <div id="inn-1">
+                <h3>1. 切除冗余数据</h3>
+                <p>
+                    传统的SOH估算需要完整的充放电循环数据，但这在实际应用中很难实现。BMSFormer提出了一种精简的特征提取策略：<br>
+                     <strong>（1）锁定高频区间 </strong><br>
+                    选取电池日常运行最频繁出现的电压区间，即 3.8V 至 4.2V 充电区间和 3.8V 至 3.4V 放电区间。<br>
+                     <strong>（2）单健康因子 </strong><br>
+                    通过滑动窗口技术，逐步缩小窗口大小和步长，筛选出与SOH相关性最强的单一健康因子（HIs），其皮尔逊（PCC）相关系数大于0.99。<br>
+                    在此策略下，BMSFormer只需捕捉到这短短几分钟的数据片段，通过强相关的单健康因子，快速判断电池健康度。
+                </p>
+                <div class="img-wrapper">
+                    <!-- ★★★ 修改点：添加了 small-size 类 ★★★ -->
+                    <img src="2.jpg" alt="图2 选定充电区间内选定健康指标（HI）的提取流程" class="content-img small-size" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <span class="caption">图2 选定充电区间内选定健康指标（HI）的提取流程</span>
+                </div>
+            </div>
+
+            <div id="inn-2">
+                <h3>2. 局部—全局融合注意力机制 (LGFA)</h3>
+                <p>
+                    传统的Transformer模型采用Softmax注意力机制，其计算复杂度随序列长度呈二次方增长，对大规模序列应用时计算成本高昂。BMSFormer设计了<strong> LGFA (Local-Global Fusion Attention) </strong>模块来解决这一问题。<br>
+                     <strong>（1）从指数到线性 </strong><br>
+                    利用ReLU线性注意力机制替代传统的Softmax，将计算复杂度降低为线性。<br>
+                     <strong>（2）局部特征增强 </strong><br>
+                    线性注意力容易丢失细节。LGFA模块引入了深度可分离卷积（DSConv），使模型既能捕捉全局变化趋势，又保留了对局部电压波动特征的敏感度。
+                </p>
+                <div class="img-wrapper">
+                    <img src="3.jpg" alt="LGFA架构图" class="content-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                   <span class="caption">图3 不同注意力机制对比：(a) 传统 Softmax 注意力机制；(b) 传统线性注意力机制；(c) 局部-全局融合注意力（LGFA）模块</span>
+                </div>
+            </div>
+
+            <div id="inn-3">
+                <h3>3. 多尺度深度可分离卷积 (DSConv)</h3>
+                <p>
+                    BMSFormer采用<strong>深度可分离卷积（Depthwise Separable Convolution）</strong>代替传统卷积，使模型更轻量化。<br>
+                     <strong>（1）DSConv-S </strong><br>
+                    采用 2 倍输入通道扩展因子，应用 1×3 深度卷积核尺寸，负责提取短期、细微的特征变化。<br>
+                     <strong>（2）DSConv-L </strong><br>
+                    采用 3 倍输入通道扩展因子，应用 1×31 深度卷积核尺寸，负责提取长期、整体的退化趋势。
+                </p>
+                <div class="img-wrapper">
+                    <img src="4.jpg" alt="DSConv示意图" class="content-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <span class="caption">图4 基本结构示意图：(a) 标准卷积；(b) 标准深度可分离卷积；(c) DSConv-S模块；(d) DSConv-L模块。</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第三章 -->
+        <section id="dataset" class="content-block">
+            <h2>三、数据集实测</h2>
+            <p>
+                作者使用了三个公开数据集（Oxford、NASA、CALCE）对五种模型（BMSFormer、CNN-Transformer、CNN-LSTM、Transformer 、LSTM）进行了全面评估，选用五种评估指标（平均绝对误差（MAE）、平均绝对百分比误差（MAPE）、均方根误差（RMSE）、决定系数（R2）和平均均方根误差（ARMSE））评估性能，涵盖了不同的电池材料（LCO、NCA、NCO）和不同电池形态（软包、圆柱、方形）。
+            </p>
+            <div id="dat-1">
+                <h3>1. 精度和泛化能力</h3>
+                <p>
+                    在Oxford数据集上，BMSFormer的平均RMSE仅为 0.0031。相比其他四个模型，平均MAE降低幅度在14.81% ~ 73.56% 之间，平均 MAPE降低幅度在20.00% ~ 76.32% 之间。
+                    在NASA和CALCE数据集上，面对出现的容量再生（Capacity Regeneration）现象时，BMSFormer展现了更好的跟踪能力，误差波动更小，预测曲线最贴合真实值。其平均 MAE 降低幅度在23.67% ~ 47.90% 之间，平均 MAPE降低幅度在 20.42% ~ 53.71% 之间。
+                </p>
+            </div>
+
+            <div id="dat-2">
+                <h3>2. 计算效率和资源占用</h3>
+                <p>
+                    在相同的训练条件下，BMSFormer模型大小仅为 <strong>36.37 KB</strong>，相比于精度表现较好的CNN-Transformer（47.10 KB）和Transformer（39.48KB），它更适合嵌入芯片有限的存储空间中，并且BMSFormer 实现了最短的训练时间 19.83s。
+                </p>
+                <div class="img-wrapper">
+                    <img src="5.jpg" alt="LGFA实测结果图" class="content-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <span class="caption">表1 相同和最优配置下模型的综合性能</span>
+                </div>
+            </div>
+
+            <div id="dat-3">
+                <h3>3. 鲁棒性</h3>
+                <p>
+                    作者对五种模型分别在训练集上使用 384 种不同的超参数组合进行训练和验证。超参数包括迭代次数、学习率、块数、层数、稠密维度、嵌入维度。
+                </p>
+                <div class="img-wrapper">
+                    <img src="6.jpg" alt="DSConv实测分析图" class="content-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <span class="caption">表2 超参数组合</span>
+                </div>
+                <p>
+                    BMSFormer在不同超参数组合下均表现出稳健的性能和精度，且有 41 种组合的预测模型R2值超过 0.98，43.23% 的组合R2值大于 0.9，还实现了最高的R2值0.9892。结果表明该模型对超参数不敏感，在实际工程应用中更方便调试。
+                </p>
+                <div class="img-wrapper">
+                    <!-- ★★★ 修改点：添加了 small-size 类 ★★★ -->
+                    <img src="7.jpg" alt="DSConv实测分析图" class="content-img small-size" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <span class="caption">图5 不同模型及超参数组合下的整体验证结果</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第四章 -->
+        <section id="summary" class="content-block">
+            <h2>四、总结</h2>
+            <p>
+                BMSFormer模型通过引入局部—全局融合注意力机制 (LGFA)和多尺度深度可分离卷积 (DSConv)，成功地将Transformer的强大能力浓缩到微型模型中，对于解决如何在低算力平台上实现高精度、低延时的SOH估算这一问题提供了一个有效途径。
+            </p>
+        </section>
+
+        <!-- 原始文献 -->
+        <section id="reference" class="content-block">
+            <h2>原始文献</h2>
+            <p>
+                Li X, Zhao M, Zhong S, et al. BMSFormer: An efficient deep learning model for online state-of-health estimation of lithium-ion batteries under high-frequency early SOC data with strong correlated single health indicator[J]. Energy, 2024, 313: 134030.
+            </p>
+        </section>
+<!-- 页脚区域 -->
+<footer class="bms-footer">
+    <h2 class="footer-logo">BMSFormer</h2>
+
+    <div class="footer-desc">
+        <p>面向资源受限BMS的高效模型</p>
+        <p>局部—全局融合注意力机制 &bull; 深度特征融合</p>
+    </div>
+
+    <div class="footer-copyright">
+        &copy; · 2024 · BMSFormer
+    </div>
+</footer>
+    </main>
+
+    <!-- 灯箱容器 -->
+    <div id="lightbox" class="lightbox">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-content" id="lightbox-img">
+    </div>
+
+    <script>
+        // 1. 目录平滑滚动代码
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // 2. 灯箱 (Lightbox) 逻辑代码
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const closeBtn = document.querySelector('.lightbox-close');
+
+        // 获取页面上所有的内容图片
+        const images = document.querySelectorAll('.content-img');
+
+        images.forEach(img => {
+            img.addEventListener('click', function() {
+                // 如果图片是隐藏的或者加载失败的（显示了placeholder），则不触发
+                if (this.style.display === 'none') return;
+
+                lightbox.style.display = "flex"; // 显示灯箱
+                lightboxImg.src = this.src;      // 设置灯箱图片源
+            });
+        });
+
+        // 点击关闭按钮关闭灯箱
+        closeBtn.onclick = function() {
+            lightbox.style.display = "none";
+        }
+
+        // 点击背景区域也可以关闭
+        lightbox.onclick = function(e) {
+            if (e.target === lightbox) {
+                lightbox.style.display = "none";
+            }
+        }
+
+        // 按 ESC 键关闭
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "Escape" && lightbox.style.display === "flex") {
+                lightbox.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>
