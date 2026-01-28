@@ -617,8 +617,12 @@
     // 1. 目录平滑滚动代码
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
+            // 如果是语言切换的 hash（如 #us, #fr），不进行滚动处理
+            const href = this.getAttribute('href');
+            if (['#us', '#en', '#fr', '#de', '#zh'].includes(href)) return;
+
             e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
+            const target = document.querySelector(href);
             if (target) {
                 target.scrollIntoView({
                     behavior: 'smooth'
@@ -649,11 +653,12 @@
         }
     });
 
-    // 3. 多语言翻译数据 (已完整补全)
+    // 3. 多语言翻译数据
     const translations = {
+        // ... (此处保持您原有的翻译数据内容不变，太长省略以节省空间) ...
+        // 请确保保留完整的 translations 对象
         // ================== 英语 English ==================
         "en": {
-            // Navigation
             "nav-title": "Navigation",
             "nav-1": "I. Challenges of BMS",
             "nav-2": "II. Innovation of BMSFormer",
@@ -666,8 +671,6 @@
             "nav-3-3": "3. Robustness",
             "nav-4": "IV. Conclusion",
             "nav-ref": "Original Reference",
-
-            // Header
             "tag-note": "[Study Note]",
             "main-title": "BMSFormer: An Efficient Online Li-ion Battery SOH Estimation Model for Resource-Constrained BMS",
             "btn-link": "Original Paper (ScienceDirect)",
@@ -677,54 +680,39 @@
             "info-journal-val": "Energy, 2024",
             "info-keywords-label": "Keywords:",
             "info-keywords-val": "State of health (SOH); Lithium-ion battery; Efficient estimation; Local-global fusion attention; Deep feature fusion",
-
-            // Section 1
             "sec1-title": "I. Challenges of BMS",
             "sec1-p1": "Safety and lifespan management of lithium-ion batteries have become critical focal points, with State of Health (SOH) estimation acting as a core function of the Battery Management System (BMS). In practical BMS development, engineers face three primary challenges:<br><strong>(1) Computational and Storage Constraints</strong><br>Embedded BMS chips possess limited storage capacity and computational power. Conversely, models like the Transformer involve a vast number of parameters, making them too heavy for such chips to accommodate.<br><strong>(2) Insufficient Real-time Performance and Stability</strong><br>Many models feature complex architectures and long inference times. Furthermore, they are often sensitive to hyperparameter settings, making it difficult to meet the requirements for real-time estimation and operational stability.<br><strong>(3) Inadequate Accuracy</strong><br>Some models rely on health indicators (HIs) with insufficient representational capability or extract HIs that are only weakly correlated with battery health, resulting in compromised estimation accuracy.",
             "sec1-p2": "To address these issues, this paper proposes the lightweight <strong>BMSFormer (Battery Management System Transformer)</strong> model. BMSFormer retains the feature extraction capabilities of the Transformer model while effectively reducing computational complexity and storage requirements without compromising accuracy, making it suitable for resource-constrained BMS environments.",
-
-            // Section 2
             "sec2-title": "II. Innovation of BMSFormer",
             "sec2-intro": "BMSFormer is not merely a simple application of the Transformer; rather, it is a lightweight, high-efficiency model that has been deeply reconstructed to align with the characteristics of battery time-series data.",
             "fig-1": "Fig.1 BMSFormer Model Framework: (a) Local-Global Fusion Attention (LGFA) module; (b) BMSFormer block; (c) DSConv-L module; (d) Core structure of BMSFormer.",
-
             "sec2-1-title": "1. Pruning Redundant Data",
             "sec2-1-p1": "Traditional SOH estimation requires complete charge-discharge cycle data, which is often impractical in real-world applications. BMSFormer proposes a streamlined feature extraction strategy:<br><strong>(1) Targeting High-Frequency Intervals</strong><br>The model selects voltage intervals that occur most frequently during daily battery operation, specifically the 3.8V to 4.2V charging interval and the 3.8V to 3.4V discharging interval.<br><strong>(2) Single Health Indicator </strong><br>Using a sliding window technique with progressively reducing window sizes and step lengths, the model screens for the single Health Indicator (HIs) most strongly correlated with SOH, achieving a Pearson Correlation Coefficient (PCC) greater than 0.99.<br>Under this strategy, BMSFormer only needs to capture these brief data fragments spanning a few minutes to rapidly assess battery health via the strongly correlated single HI.",
             "fig-2": "Fig.2 Extraction process of the selected Health Indicator (HI) within the chosen charging interval.",
-
             "sec2-2-title": "2. Local-Global Fusion Attention (LGFA) Mechanism",
             "sec2-2-p1": "Traditional Transformer models utilize the Softmax attention mechanism, where computational complexity grows quadratically with sequence length, leading to prohibitive computational costs for large-scale sequences. BMSFormer introduces the <strong>Local-Global Fusion Attention (LGFA)</strong> module to address this issue.<br><strong>(1) From Exponential to Linear</strong><br>By replacing the traditional Softmax with a ReLU linear attention mechanism, the computational complexity is reduced to a linear scale.<br><strong>(2) Local Feature Enhancement</strong><br>Linear attention mechanisms are prone to missing details. The LGFA module incorporates Depthwise Separable Convolution (DSConv), enabling the model to capture global evolutionary trends while retaining sensitivity to local voltage fluctuation features.",
             "fig-3": "Fig.3 Comparison of different attention mechanisms: (a) Traditional Softmax attention; (b) Traditional linear attention; (c) Local-Global Fusion Attention (LGFA) module.",
-
             "sec2-3-title": "3. Multi-Scale Depthwise Separable Convolution (DSConv)",
             "sec2-3-p1": "BMSFormer employs <strong>Depthwise Separable Convolution (DSConv)</strong> instead of standard convolution to render the model more lightweight.<br><strong>(1) DSConv-S</strong><br>Utilizes a 2x input channel expansion factor and a 1×3 depthwise convolution kernel size, responsible for extracting short-term, subtle feature variations.<br><strong>(2) DSConv-L</strong><br>Utilizes a 3x input channel expansion factor and a 1×31 depthwise convolution kernel size, responsible for extracting long-term, overall degradation trends.",
             "fig-4": "Fig.4 Schematic of basic structures: (a) Standard convolution; (b) Standard depthwise separable convolution; (c) DSConv-S module; (d) DSConv-L module.",
-
-            // Section 3
             "sec3-title": "III. Dataset Evaluation",
             "sec3-intro": "The authors conducted a comprehensive evaluation of five models (BMSFormer, CNN-Transformer, CNN-LSTM, Transformer, and LSTM) using three public datasets (Oxford, NASA, and CALCE). Performance was assessed using five metrics: Mean Absolute Error (MAE), Mean Absolute Percentage Error (MAPE), Root Mean Square Error (RMSE), Coefficient of Determination (R2), and Average Root Mean Square Error (ARMSE). The study covered various battery materials (LCO, NCA, NCO) and form factors (pouch, cylindrical, prismatic).",
-
             "sec3-1-title": "1. Accuracy and Generalization Ability",
             "sec3-1-p1": "On the Oxford dataset, the average RMSE of BMSFormer was only<strong> 0.0031</strong>. Compared to the other four models, the average MAE reduction ranged from 14.81% to 73.56%, and the average MAPE reduction ranged from 20.00% to 76.32%.On the NASA and CALCE datasets, when encountering the phenomenon of capacity regeneration, BMSFormer demonstrated superior tracking capability with smaller error fluctuations, producing prediction curves that most closely matched the ground truth. Its average MAE reduction ranged from 23.67% to 47.90%, and average MAPE reduction ranged from 20.42% to 53.71%.",
-
             "sec3-2-title": "2. Computational Efficiency and Resource Consumption",
             "sec3-2-p1": "Under identical training conditions, the BMSFormer model size is only <strong>36.37 KB</strong>. Compared to CNN-Transformer (47.10 KB) and Transformer (39.48 KB), which performed relatively well in accuracy, BMSFormer is more suitable for the limited storage space of embedded chips. Additionally, BMSFormer achieved the shortest training time of 19.83 seconds.",
             "tab-1": "Table 1 Comprehensive performance of models under identical and optimal configurations.",
-
             "sec3-3-title": "3. Robustness",
             "sec3-3-p1": "The authors trained and validated the five models on the training set using 384 different hyperparameter combinations. These hyperparameters included epoch number, learning rate, number of blocks, number of layers, dense dimension, and embedding dimension.",
             "tab-2": "Table 2 Hyperparameter combinations.",
             "sec3-3-p2": "BMSFormer exhibited robust performance and accuracy across different hyperparameter combinations. Specifically, 41 combinations yielded prediction models with an R2 value exceeding 0.98, and 43.23% of the combinations had an R2 value greater than 0.9. It also achieved the highest R2 value of 0.9892. These results indicate that the model is insensitive to hyperparameters, making it easier to tune in practical engineering applications.",
             "fig-5": "Fig.5 Overall validation results under different models and hyperparameter combinations.",
-
-            // Section 4 & Footer
             "sec4-title": "IV. Conclusion",
             "sec4-p1": "By introducing the Local-Global Fusion Attention (LGFA) mechanism and multi-scale Depthwise Separable Convolution (DSConv), the BMSFormer model aims to condense the powerful capabilities of the Transformer into a compact model. This provides an alternative pathway for solving the problem of achieving high-precision, low-latency SOH estimation on low-computational-power platforms.",
             "ref-title": "Original Reference",
             "footer-slogan": "Efficient Model for Resource-Constrained BMS",
             "footer-tech": "Local-Global Fusion Attention &bull; Deep Feature Fusion"
         },
-
         // ================== 法语 Français ==================
         "fr": {
             "nav-title": "Navigation",
@@ -739,7 +727,6 @@
             "nav-3-3": "3. Robustesse",
             "nav-4": "IV. Conclusion",
             "nav-ref": "Référence originale",
-
             "tag-note": "[Note d'étude]",
             "main-title": "BMSFormer : Un modèle efficace d'estimation en ligne du SOH pour les BMS à ressources limitées",
             "btn-link": "Lien original (ScienceDirect)",
@@ -749,11 +736,9 @@
             "info-journal-val": "Energy, 2024",
             "info-keywords-label": "Mots-clés :",
             "info-keywords-val": "État de santé (SOH) ; Batterie lithium-ion ; Estimation de l'efficacité ; Attention de fusion locale-globale ; Fusion de caractéristiques profondes",
-
             "sec1-title": "I. Les défis du BMS",
             "sec1-p1": "La sécurité et la gestion de la durée de vie des batteries lithium-ion sont des sujets brûlants à l'heure actuelle, l'estimation de leur état de santé (SOH) étant l'une des fonctions principales du système de gestion de batterie (BMS). Dans le développement réel de BMS, les ingénieurs sont confrontés à trois défis majeurs :<br><strong>(1) Contraintes de puissance de calcul et de stockage</strong><br>Les puces BMS embarquées disposent d'un espace de stockage et d'une puissance de calcul limités. En revanche, des modèles tels que le Transformer impliquent un grand nombre de paramètres, ce qui les rend trop lourds pour être supportés par ces puces.<br><strong>(2) Performance temps réel et stabilité insuffisantes</strong><br>De nombreux modèles présentent des architectures complexes et des temps d'inférence longs. De plus, ils sont souvent sensibles aux réglages des hyperparameters, ce qui rend difficile le respect des exigences en matière d'estimation en temps réel et de stabilité opérationnelle.<br><strong>(3) Précision insuffisante</strong><br>Certains modèles s'appuient sur des indicateurs de santé (HIs) ayant une capacité de représentation insuffisante ou extraient des indicateurs faiblement corrélés, ce qui entraîne une précision insuffisante des résultats.",
             "sec1-p2": "Pour répondre à ces problèmes, cet article propose le modèle léger <strong>BMSFormer (Battery Management System Transformer)</strong>. Le BMSFormer conserve les capacités d'extraction de caractéristiques du modèle Transformer tout en réduisant efficacement la complexité de calcul et les exigences de stockage sans sacrifier la précision, ce qui le rend adapté aux environnements BMS à ressources limitées.",
-
             "sec2-title": "II. Les innovations du BMSFormer",
             "sec2-intro": "Le BMSFormer n'est pas une simple application du Transformer ; il s'agit plutôt d'un modèle léger et efficace qui a été profondément reconstruit pour s'aligner sur les caractéristiques des données de séries temporelles de la batterie.",
             "fig-1": "Fig.1 Cadre du modèle BMSFormer : (a) Module d'Attention de Fusion Locale-Globale (LGFA) ; (b) Bloc BMSFormer ; (c) Module DSConv-L ; (d) Structure centrale du BMSFormer.",
@@ -766,7 +751,6 @@
             "sec2-3-title": "3. Convolution Séparable en Profondeur (DSConv) Multi-échelle",
             "sec2-3-p1": "Le BMSFormer utilise la <strong>convolution séparable en profondeur (DSConv)</strong> au lieu de la convolution standard pour rendre le modèle plus léger.<br><strong>(1) DSConv-S</strong><br>Utilise un facteur d'expansion des canaux d'entrée de 2x et une taille de noyau de convolution en profondeur de 1×3, responsable de l'extraction des variations de caractéristiques subtiles et à court terme.<br><strong>(2) DSConv-L</strong><br>Utilise un facteur d'expansion des canaux d'entrée de 3x et une taille de noyau de convolution en profondeur de 1×31, responsable de l'extraction des tendances de dégradation globales et à long terme.",
             "fig-4": "Fig.4 Schéma des structures de base : (a) Convolution standard ; (b) Convolution séparable en profondeur standard ; (c) Module DSConv-S ; (d) Module DSConv-L.",
-
             "sec3-title": "III. Évaluation empirique sur les ensembles de données",
             "sec3-intro": "Les auteurs ont mené une évaluation complète de cinq modèles (BMSFormer, CNN-Transformer, CNN-LSTM, Transformer et LSTM) en utilisant trois ensembles de données publics (Oxford, NASA et CALCE). La performance a été évaluée à l'aide de cinq métriques : l'erreur absolue moyenne (MAE), l'erreur absolue moyenne en pourcentage (MAPE), l'erreur quadratique moyenne (RMSE), le coefficient de détermination (R2) et l'erreur quadratique moyenne racine moyenne (ARMSE). L'étude a couvert divers matériaux de batterie (LCO, NCA, NCO) et formats (poche, cylindrique, prismatique).",
             "sec3-1-title": "1. Précision et capacité de généralisation",
@@ -779,14 +763,12 @@
             "tab-2": "Tableau 2 Combinaisons d'hyperparamètres.",
             "sec3-3-p2": "Le BMSFormer a fait preuve de performances et d'une précision robustes à travers différentes combinaisons d'hyperparameters. Plus précisément, 41 combinaisons ont produit des modèles de prédiction avec une valeur R2 supérieure à 0,98, et 43,23 % des combinaisons avaient une valeur R2 supérieure à 0,9. Il a également atteint la valeur R2 la plus élevée de 0,9892. Ces résultats indiquent que le modèle est peu sensible aux hyperparameters, ce qui facilite son réglage dans les applications d'ingénierie réelles.",
             "fig-5": "Fig. 5 Résultats globaux de validation selon différents modèles et combinaisons d'hyperparamètres.",
-
             "sec4-title": "IV. Conclusion",
             "sec4-p1": "En introduisant le mécanisme d'Attention de Fusion Locale-Globale (LGFA) et la Convolution Séparable en Profondeur (DSConv) multi-échelle, le modèle BMSFormer s'efforce de condenser les puissantes capacités du Transformer dans un modèle compact. Cela offre une voie alternative pour résoudre le problème de la réalisation d'une estimation du SOH de haute précision et à faible latence sur des plateformes à faible puissance de calcul.",
             "ref-title": "Référence originale",
             "footer-slogan": "Modèle efficace pour BMS à ressources limitées",
             "footer-tech": "Attention fusionnée &bull; Fusion de caractéristiques profondes"
         },
-
         // ================== 德语 Deutsch ==================
         "de": {
             "nav-title": "Navigation",
@@ -801,21 +783,18 @@
             "nav-3-3": "3. Robustheit",
             "nav-4": "IV. Zusammenfassung",
             "nav-ref": "Originalreferenz",
-
             "tag-note": "[Studiennotiz]",
             "main-title": "BMSFormer: Ein effizientes Online-SOH-Schätzmodell für ressourcenbeschränkte BMS",
-            "btn-link": "Originallink (ScienceDirect)",
+            "btn-link": "Originallink: (ScienceDirect)",
             "info-title-label": "Titel der Arbeit:",
             "info-title-val": "BMSFormer: Ein effizientes Deep-Learning-Modell...",
             "info-journal-label": "Journal:",
             "info-journal-val": "Energy, 2024",
             "info-keywords-label": "Schlüsselwörter: ",
             "info-keywords-val": "Gesundheitszustand (SOH); Lithium-Ionen-Batterie; Effizienzschätzung; Lokal-Globale Fusionsaufmerksamkeit; Tiefe Merkmalsfusion",
-
             "sec1-title": "I. Herausforderungen im BMS",
             "sec1-p1": "Sicherheit und Lebensdauermanagement von Lithium-Ionen-Batterien sind in der heutigen Zeit zentrale Themen, wobei die Schätzung des Gesundheitszustands (State of Health, SOH) eine Kernfunktion des Batteriemanagementsystems (BMS) darstellt. In der praktischen BMS-Entwicklung stehen Ingenieure vor drei Hauptproblemen:<br><strong>(1) Begrenzungen bei Rechenleistung und Speicherplatz</strong><br>Eingebettete BMS-Chips verfügen über begrenzten Speicherplatz und Rechenleistung. Im Gegensatz dazu weisen Modelle wie der Transformer eine enorme Anzahl an Parametern auf, was sie für solche Chips zu schwergewichtig macht.<br><strong>(2) Unzureichende Echtzeitfähigkeit und Stabilität</strong><br>Viele Modelle besitzen komplexe Strukturen und lange Inferenzzeiten. Zudem sind sie oft empfindlich gegenüber Hyperparameter-Einstellungen, was es schwierig macht, die Anforderungen an Echtzeitschätzung und Betriebsstabilität zu erfüllen.<br><strong>(3) Unzureichende Genauigkeit</strong><br>Einige Modelle stützen sich auf Gesundheitsindikatoren (HIs) mit unzureichender Repräsentationsfähigkeit oder extrahieren schwach korrelierte Indikatoren, was zu einer beeinträchtigten Schätzgenauigkeit führt.",
             "sec1-p2": "Um diese Probleme anzugehen, schlägt diese Arbeit das leichtgewichtige Modell <strong>BMSFormer (Battery Management System Transformer)</strong> vor. BMSFormer behält die Fähigkeiten zur Merkmalsextraktion des Transformer-Modells bei, reduziert jedoch effektiv die Rechenkomplexität und den Speicherbedarf ohne Einbußen bei der Genauigkeit, wodurch es sich für ressourcenbeschränkte BMS-Umgebungen eignet.",
-
             "sec2-title": "II. Innovationen des BMSFormer",
             "sec2-intro": "BMSFormer ist nicht bloß eine einfache Anwendung des Transformer; vielmehr handelt es sich um ein leichtgewichtiges, hocheffizientes Modell, das tiefgreifend rekonstruiert wurde, um den Eigenschaften von Batterie-Zeitreihendaten gerecht zu werden.",
             "fig-1": "Abb.1 Rahmenwerk des BMSFormer-Modells: (a) Local-Global Fusion Attention (LGFA)-Modul; (b) BMSFormer-Block; (c) DSConv-L-Modul; (d) Kernstruktur des BMSFormer.",
@@ -828,9 +807,8 @@
             "sec2-3-title": "3. Mehrskalige Depthwise Separable Convolution (DSConv)",
             "sec2-3-p1": "BMSFormer verwendet <strong>Depthwise Separable Convolution (DSConv)</strong> anstelle von Standard-Faltung, um das Modell leichtgewichtiger zu machen.<br><strong>(1) DSConv-S</strong><br>Nutzt einen 2-fachen Erweiterungsfaktor für Eingangskanäle und eine Kernelgröße der Tiefenfaltung von 1×3, zuständig für die Extraktion kurzfristiger, subtiler Merkmalsänderungen.<br><strong>(2) DSConv-L</strong><br>Nutzt einen 3-fachen Erweiterungsfaktor für Eingangskanäle und eine Kernelgröße der Tiefenfaltung von 1×31, zuständig für die Extraktion langfristiger, globaler Degradationstrends.",
             "fig-4": "Abb.4 Schema der Grundstrukturen: (a) Standard-Faltung; (b) Standard Depthwise Separable Convolution; (c) DSConv-S-Modul; (d) DSConv-L-Modul.",
-
             "sec3-title": "III. Empirische Bewertung auf Datensätzen",
-            "sec3-intro": "Die Autoren führten eine umfassende Bewertung von fünf Modellen (BMSFormer, CNN-Transformer, CNN-LSTM, Transformer und LSTM) unter Verwendung von drei öffentlichen Datensätzen (Oxford, NASA und CALCE) durch. Die Leistung wurde anhand von fünf Metriken bewertet: Mittlerer absoluter Fehler (MAE), Mittlerer absoluter prozentualer Fehler (MAPE), Wurzel des mittleren quadratischen Fehlers (RMSE), Bestimmtheitsmaß (R2) und durchschnittlicher RMSE (ARMSE). Die Studie deckte verschiedene Batteriematerialien (LCO, NCA, NCO) und Bauformen (Pouch, Zylindrisch, Prismatisch) ab.",
+            "sec3-intro": "Die Autoren führten eine umfassende Bewertung von fünf Modellen (BMSFormer, CNN-Transformer, CNN-LSTM, Transformer und LSTM) unter Verwendung von drei öffentlichen Datensätzen (Oxford, NASA und CALCE). Die Leistung wurde anhand von fünf Metriken bewertet: Mittlerer absoluter Fehler (MAE), Mittlerer absoluter prozentualer Fehler (MAPE), Wurzel des mittleren quadratischen Fehlers (RMSE), Bestimmtheitsmaß (R2) und durchschnittlicher RMSE (ARMSE). Die Studie deckte verschiedene Batteriematerialien (LCO, NCA, NCO) und Bauformen (Pouch, Zylindrisch, Prismatisch) ab.",
             "sec3-1-title": "1. Genauigkeit und Generalisierungsfähigkeit",
             "sec3-1-p1": "Auf dem Oxford-Datensatz betrug der durchschnittliche RMSE von BMSFormer nur <strong>0,0031</strong>. Im Vergleich zu den anderen vier Modellen lag die Reduktion des durchschnittlichen MAE zwischen 14,81 % und 73,56 %, und die Reduktion des durchschnittlichen MAPE lag zwischen 20,00 % und 76,32 %.Auf den NASA- und CALCE-Datensätzen zeigte BMSFormer beim Auftreten des Phänomens der Kapazitätsregeneration eine überlegene Tracking-Fähigkeit mit geringeren Fehlerschwankungen, wobei die Vorhersagekurven den tatsächlichen Werten am nächsten kamen. Die Reduktion des durchschnittlichen MAE lag zwischen 23,67 % und 47,90 %, und die Reduktion des durchschnittlichen MAPE lag zwischen 20,42 % und 53,71 %.",
             "sec3-2-title": "2. Recheneffizienz und Ressourcenverbrauch",
@@ -841,7 +819,6 @@
             "tab-2": "Tabelle 2 Hyperparameter-Kombinationen.",
             "sec3-3-p2": "BMSFormer zeigte robuste Leistung und Genauigkeit über verschiedene Hyperparameter-Kombinationen hinweg. Konkret lieferten 41 Kombinationen Vorhersagemodelle mit einem R2-Wert von über 0,98, und 43,23 % der Kombinationen hatten einen R2-Wert von mehr als 0,9. Es wurde zudem der höchste R2-Wert von 0,9892 erreicht. Diese Ergebnisse deuten darauf hin, dass das Modell unempfindlich gegenüber Hyperparametern ist, was die Abstimmung in praktischen technischen Anwendungen erleichtert.",
             "fig-5": "Abb.5 Gesamtvalidierungsergebnisse unter verschiedenen Modellen und Hyperparameter-Kombinationen.",
-
             "sec4-title": "IV. Zusammenfassung",
             "sec4-p1": "Durch die Einführung des Local-Global Fusion Attention (LGFA)-Mechanismus und der mehrskaligen Depthwise Separable Convolution (DSConv) zielt das BMSFormer-Modell darauf ab, die leistungsfähigen Fähigkeiten des Transformer in einem kompakten Modell zu kondensieren. Dies bietet einen alternativen Lösungsansatz für das Problem, eine hochpräzise SOH-Schätzung mit geringer Latenz auf Plattformen mit geringer Rechenleistung zu realisieren.",
             "ref-title": "Originalreferenz",
@@ -852,17 +829,45 @@
 
     const defaultContent = {};
 
-    // 初始化：保存默认中文内容
+    // 4. 初始化与路由逻辑 (新增)
     document.addEventListener("DOMContentLoaded", function() {
+        // 保存默认中文内容
         const elements = document.querySelectorAll("[data-i18n]");
         elements.forEach(el => {
             const key = el.getAttribute("data-i18n");
             defaultContent[key] = el.innerHTML;
         });
+
+        // 检查 URL hash 并设置初始语言
+        checkHashAndSetLanguage();
     });
 
+    // 监听 Hash 变化 (支持浏览器后退/前进按钮)
+    window.addEventListener('hashchange', checkHashAndSetLanguage);
+
+    function checkHashAndSetLanguage() {
+        // 获取 URL hash，例如 "#us" -> "us"
+        let hash = window.location.hash.slice(1);
+
+        // 映射规则：如果用户输入 #us，我们将其视为 'en' (英语)，以便匹配您的 translations 对象
+        if (hash === 'us') hash = 'en';
+
+        // 验证语言是否有效，如果无效则默认为 'zh'
+        const validLangs = ['zh', 'en', 'fr', 'de'];
+        const lang = validLangs.includes(hash) ? hash : 'zh';
+
+        // 同步下拉菜单的值
+        const selector = document.getElementById('language-selector');
+        if (selector) {
+            selector.value = lang;
+        }
+
+        // 执行翻译替换 (传入 false 防止无限循环更新 URL)
+        changeLanguage(lang, false);
+    }
+
     // 切换语言函数
-    function changeLanguage(lang) {
+    function changeLanguage(lang, updateUrl = true) {
         const elements = document.querySelectorAll("[data-i18n]");
 
         elements.forEach(el => {
@@ -873,12 +878,26 @@
                     el.innerHTML = defaultContent[key];
                 }
             } else {
-                // 只有当翻译字典里有这个 key 时才替换，否则保持原样（即中文）
-                if (translations[lang] && translations[lang][key]) {
-                    el.innerHTML = translations[lang][key];
+                // 如果是 'us'，在 translations 里找 'en'
+                const jsonKey = (lang === 'us') ? 'en' : lang;
+
+                if (translations[jsonKey] && translations[jsonKey][key]) {
+                    el.innerHTML = translations[jsonKey][key];
                 }
             }
         });
+
+        // 更新 URL Hash
+        if (updateUrl) {
+            if (lang === "zh") {
+                // 中文时移除 hash，保持 URL 干净
+                history.pushState("", document.title, window.location.pathname + window.location.search);
+            } else {
+                // 如果选的是 en，URL 显示 #us (根据您的需求)
+                const urlHash = (lang === 'en') ? 'us' : lang;
+                window.location.hash = urlHash;
+            }
+        }
     }
 </script>
 </body>
